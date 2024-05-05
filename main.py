@@ -25,6 +25,9 @@ from resnet_cifar10 import *
 
 from ptflops import get_model_complexity_info
 
+from stablediffusion import *
+from diffusers import StableDiffusionPipeline
+
 best_acc = 0  # best test accuracy
 
 CUDA_DEVICE_COUNT=0
@@ -275,14 +278,29 @@ def main():
         elif args.mode in ("lowrank", "baseline"):
             model = None
         elif args.mode == "pufferfish":
-            model = PufferfishVGG19(num_classes=_num_classes).to(device)          
+            model = PufferfishVGG19(num_classes=_num_classes).to(device)
         else:
             raise NotImplementedError("unsupported mode ...")
         vanilla_model = FullRankVGG19(num_classes=_num_classes).to(device)
+    elif args.arch == "stablediffusion":
+        pip = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4")
+        name_layers_to_factorize=set()
+        for name, module in pip.named_modules():
+            if isinstance(module, nn.Conv2d) and np.prod(module.weight.data.size())<=1280*1280*3*3:
+                name_layers_to_factorize.add(name)
+        layers_to_factorize = [s + ".weight" for s in name_layers_to_factorize]
+        if args.mode == "vanilla":
+            pass
+        elif args.mode == "lowrank":
+            model = None
+        elif args.mode == "baseline":
+            model = LowrankStableDiffusion(rank_ratio=args.rank_ratio).to(device)
+        else:
+            raise NotImplementedError("unsupported mode ...")
+        vanilla_model = FullRankStableDiffusion().to(device)
     else:
         raise NotImplementedError("Unsupported network architecture ...")
 
-  
     est_rank_tracker = [[] for _ in range(len(layers_to_factorize))]
     layer_stable_tracker = [False for _ in range(len(layers_to_factorize))]
 
