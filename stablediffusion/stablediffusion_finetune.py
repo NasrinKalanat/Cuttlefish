@@ -110,7 +110,7 @@ def get_text_embeddings(texts, tokenizer, text_encoder):
     inputs = {key: value.to(device) for key, value in inputs.items()}
     return text_encoder(**inputs).last_hidden_state
 
-def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype):
+def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs):
     for epoch in range(num_epochs):
         unet.train()
         train_loss = 0
