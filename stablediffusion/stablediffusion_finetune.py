@@ -89,18 +89,6 @@ vae.to(device, dtype=weight_dtype)
 text_encoder.to(device, dtype=weight_dtype)
 unet.to(device, dtype=weight_dtype)
 
-# Scheduler adjustment for diffusion
-def get_timestep_embedding(timesteps, embedding_dim):
-    assert len(timesteps.shape) == 1
-    half_dim = embedding_dim // 2
-    emb = torch.log(torch.tensor(10000)) / (half_dim - 1)
-    emb = torch.exp(torch.arange(half_dim, device=timesteps.device) * -emb)
-    emb = timesteps[:, None] * emb[None, :]
-    emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)
-    if embedding_dim % 2 == 1:  # zero pad
-        emb = torch.cat([emb, torch.zeros_like(emb[:, :1])], dim=1)
-    return emb
-
 # Function to compute text embeddings
 # def get_text_embeddings(texts, tokenizer, text_encoder):
 #     inputs = tokenizer(texts, padding="max_length", return_tensors="pt", max_length=77, truncation=True)
@@ -128,8 +116,7 @@ def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, optimizer,
             text_embeddings = get_text_embeddings(batch["text"][0], tokenizer, text_encoder)
 
             # Get model output
-            timestep_embeddings = get_timestep_embedding(timesteps, unet.config.in_channels)
-            model_output = unet(noisy_latents, timestep_embeddings, encoder_hidden_states=text_embeddings).sample
+            model_output = unet(noisy_latents, timesteps, encoder_hidden_states=text_embeddings).sample
 
             # Compute loss (switch to float32 for stability)
             loss = mse_loss(model_output.float(), noise.float(), reduction="mean")
@@ -172,8 +159,7 @@ def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, d
             # Run the denoising loop backward
             for t in reversed(range(scheduler.config.num_train_timesteps)):
                 timestep = torch.tensor([t], device=device).long()
-                timestep_embeddings = get_timestep_embedding(timestep, unet.config.in_channels)
-                model_output = unet(noise, timestep_embeddings, encoder_hidden_states=text_embeddings).sample
+                model_output = unet(noise, timestep, encoder_hidden_states=text_embeddings).sample
                 noise = scheduler.step(model_output, timestep, noise).prev_sample
 
             # Decode the latents back to images
