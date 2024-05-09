@@ -129,7 +129,7 @@ def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, device, we
 
             # Get model output
             timestep_embeddings = get_timestep_embedding(timesteps, unet.config.in_channels)
-            model_output = unet(noisy_latents, timesteps, encoder_hidden_states=text_embeddings).sample
+            model_output = unet(noisy_latents, timestep_embeddings, encoder_hidden_states=text_embeddings).sample
 
             # Compute loss (switch to float32 for stability)
             loss = mse_loss(model_output.float(), noise.float(), reduction="mean")
@@ -172,7 +172,8 @@ def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, d
             # Run the denoising loop backward
             for t in reversed(range(scheduler.config.num_train_timesteps)):
                 timestep = torch.tensor([t], device=device).long()
-                model_output = unet(noise, timestep, encoder_hidden_states=text_embeddings).sample
+                timestep_embeddings = get_timestep_embedding(timestep, unet.config.in_channels)
+                model_output = unet(noise, timestep_embeddings, encoder_hidden_states=text_embeddings).sample
                 noise = scheduler.step(model_output, timestep, noise).prev_sample
 
             # Decode the latents back to images
@@ -186,5 +187,6 @@ def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, d
     avg_ssim = np.mean(ssim_scores)
     print(f"Average SSIM: {avg_ssim}")
 
-train(train_dataloader, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype)
+# Train and evaluate
+train(train_dataloader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs)
 evaluate_model(test_dataloader, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype)
