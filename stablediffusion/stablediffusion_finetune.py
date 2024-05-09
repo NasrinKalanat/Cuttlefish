@@ -131,7 +131,6 @@ for epoch in range(num_epochs):
 
         # Compute loss (switch to float32 for stability)
         loss = mse_loss(model_output.float(), noise.float(), reduction="mean")
-        print(loss)
         train_loss += loss.item()
 
         # Optimization step
