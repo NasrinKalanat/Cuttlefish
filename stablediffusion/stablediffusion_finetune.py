@@ -11,6 +11,7 @@ from tqdm import tqdm
 from skimage.metrics import structural_similarity as ssim
 from torch.amp import autocast
 import os
+import random
 
 resolution=68
 random_flip=True
@@ -49,7 +50,7 @@ tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
 
 def preprocess(example, transform):
     image = transform(example["image"].convert("RGB"))
-    caption = tokenizer(example["caption"][0], max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
+    caption = tokenizer(example["caption"][random.randint(0,len(example["caption"]-1))], max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
     return {"pixel_values": image, "text": caption}
 
 # Apply preprocessing to each dataset
