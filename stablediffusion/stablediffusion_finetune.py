@@ -74,12 +74,12 @@ pipe = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", 
 # Extract individual components for training
 vae = pipe.vae
 # tokenizer = pipe.tokenizer
-# text_encoder = pipe.text_encoder
-text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
+text_encoder = pipe.text_encoder
+# text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
 unet = pipe.unet
 
-# scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
-scheduler = pipe.scheduler
+scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+# scheduler = pipe.scheduler
 
 # Optimizer
 optimizer = AdamW(unet.parameters(), lr=1e-4)
@@ -144,7 +144,7 @@ def calculate_ssim(img1, img2):
     img2 = img2.permute(1, 2, 0).numpy()
     return ssim(img1, img2, multichannel=True)
 
-def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype):
+def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps):
     """Evaluate the Stable Diffusion model on a given dataset."""
     unet.eval()
     ssim_scores = []
@@ -162,7 +162,7 @@ def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, d
             noise = torch.randn_like(latents)
 
             # Run the denoising loop backward
-            for t in reversed(range(scheduler.config.num_train_timesteps//100)):
+            for t in reversed(range(num_inference_steps)):
                 timestep = torch.tensor([t], device=device).long()
                 model_output = unet(noise, timestep, encoder_hidden_states=text_embeddings).sample
                 noise = scheduler.step(model_output, timestep, noise).prev_sample
@@ -191,7 +191,7 @@ def validate_with_prompts(pipeline, validation_prompts, num_inference_steps=20, 
 
 # Train and evaluate
 train(train_dataloader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs)
-evaluate_model(test_dataloader, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype)
+evaluate_model(test_dataloader, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps=20)
 
 # Example validation prompts
 validation_prompts = [
