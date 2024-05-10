@@ -148,7 +148,7 @@ def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, sc
     """Evaluate the Stable Diffusion model on a given dataset."""
     unet.eval()
     ssim_scores = []
-
+    generator = torch.Generator(device=device).manual_seed(42)
     with torch.no_grad():
         for batch in tqdm(data_loader, desc="Evaluating"):
             with autocast("cuda"):
