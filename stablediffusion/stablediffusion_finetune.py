@@ -564,11 +564,11 @@ validation_images = validate_with_prompts(pipe, validation_prompts, num_inferenc
         #             accelerator.save_state(save_path)
         #             logger.info(f"Saved state to {save_path}")
 
-        logs = {"step_loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
-        progress_bar.set_postfix(**logs)
-
-        if global_step >= max_train_steps:
-            break
+        # logs = {"step_loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
+        # progress_bar.set_postfix(**logs)
+        #
+        # if global_step >= max_train_steps:
+        #     break
 
 #     if accelerator.is_main_process:
 #         if args.validation_prompts is not None and epoch % args.validation_epochs == 0:
@@ -637,4 +637,4 @@ validation_images = validate_with_prompts(pipe, validation_prompts, num_inferenc
 #             ignore_patterns=["step_*", "epoch_*"],
 #         )
 
-accelerator.end_training()
+# accelerator.end_training()
