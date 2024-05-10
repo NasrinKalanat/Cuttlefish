@@ -155,7 +155,7 @@ def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, d
             latents = latents * vae.config.scaling_factor
 
             # Generate captions to text embeddings
-            text_embeddings = get_text_embeddings(batch["text"][0], text_encoder)
+            text_embeddings = get_text_embeddings(batch["text"], text_encoder)
 
             # Set initial noise
             noise = torch.randn_like(latents)
