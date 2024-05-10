@@ -547,12 +547,12 @@ for epoch in range(first_epoch, num_train_epochs):
         #             save_path = os.path.join(args.output_dir, f"checkpoint-{global_step}")
         #             accelerator.save_state(save_path)
         #             logger.info(f"Saved state to {save_path}")
-        #
-        # logs = {"step_loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
-        # progress_bar.set_postfix(**logs)
-        #
-        # if global_step >= max_train_steps:
-        #     break
+
+        logs = {"step_loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
+        progress_bar.set_postfix(**logs)
+
+        if global_step >= max_train_steps:
+            break
 
 #     if accelerator.is_main_process:
 #         if args.validation_prompts is not None and epoch % args.validation_epochs == 0:
