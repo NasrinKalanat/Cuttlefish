@@ -14,6 +14,14 @@ import os
 import random
 from PIL import Image
 
+weight_dtype=torch.float32
+# Load Stable Diffusion pipeline
+pipe = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", dtype=weight_dtype)
+# pipe =pip.to('cuda')
+
+tokenizer = pipe.tokenizer
+# tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+
 resolution=(256,256)
 random_flip=True
 center_crop=False
@@ -47,8 +55,6 @@ train_data=split['train']
 # print(val_data)
 
 # Preprocess dataset with text captions
-tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
-
 def preprocess_train(examples):
     image = [transform_train(example.convert("RGB")) for example in examples["image"]]
     caption = tokenizer([example[0] for example in examples["caption"]], max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
@@ -71,11 +77,6 @@ test_data.set_transform(preprocess_test, output_all_columns=True)
 train_dataloader = DataLoader(train_data, batch_size=8, shuffle=True)
 # val_dataloader = DataLoader(val_data, batch_size=8, shuffle=False)
 test_dataloader = DataLoader(test_data, batch_size=8, shuffle=False)
-
-weight_dtype=torch.float32
-# Load Stable Diffusion pipeline
-pipe = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", dtype=weight_dtype)
-# pipe =pip.to('cuda')
 
 # Extract individual components for training
 vae = pipe.vae
