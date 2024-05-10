@@ -152,6 +152,7 @@ def calculate_ssim(img1, img2):
 def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps):
     """Evaluate the Stable Diffusion model on a given dataset."""
     unet.eval()
+    pipeline.to("cuda")
     ssim_scores = []
     generator = torch.Generator(device=device).manual_seed(42)
     with torch.no_grad():
@@ -194,19 +195,20 @@ def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, sc
 
 def validate_with_prompts(pipeline, validation_prompts, num_inference_steps=20, output_dir=""):
     """Generate and display images for a list of validation prompts."""
+    unet.eval()
     pipeline.to("cuda")
     images = []
     generator = torch.Generator(device=device).manual_seed(42)
     for prompt in validation_prompts:
         with autocast(device_type="cuda", dtype=weight_dtype):
             image = pipeline(prompt, num_inference_steps=num_inference_steps, generator=generator).images[0]
-            image.save(os.path.join(output_dir, f"validation_output_{validation_prompts}.png"))
+            image.save(os.path.join(output_dir, f"validation_output_{prompt}.png"))
         images.append(image)
     return images
 
 # Train and evaluate
 train(train_dataloader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs)
-# evaluate_model(test_dataloader, pipe, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps=20)
+evaluate_model(test_dataloader, pipe, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps=20)
 
 # Example validation prompts
 validation_prompts = [
