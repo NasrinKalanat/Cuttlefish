@@ -58,11 +58,11 @@ def preprocess_test(example):
 
 # Apply preprocessing to each dataset
 train_data = train_data.map(preprocess_train, remove_columns=["image", "caption"])
-train_data.set_format(type="torch", columns=["pixel_values"], output_all_columns=True)
+train_data.set_format(type="torch", columns=["pixel_values", "text"], output_all_columns=True)
 # val_data = val_data.map(preprocess_test, remove_columns=["image", "caption"])
-# val_data.set_format(type="torch", columns=["pixel_values"])
+# val_data.set_format(type="torch", columns=["pixel_values", "text"])
 test_data = test_data.map(preprocess_test, remove_columns=["image", "caption"])
-test_data.set_format(type="torch", columns=["pixel_values"])
+test_data.set_format(type="torch", columns=["pixel_values", "text"])
 
 # Set up DataLoaders
 train_dataloader = DataLoader(train_data, batch_size=8, shuffle=True)
