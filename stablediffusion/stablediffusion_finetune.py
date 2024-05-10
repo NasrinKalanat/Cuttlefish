@@ -236,7 +236,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 # import torch.utils.checkpoint
-import transformers
+# import transformers
 from accelerate import Accelerator
 # from accelerate.logging import get_logger
 # from accelerate.state import AcceleratorState
