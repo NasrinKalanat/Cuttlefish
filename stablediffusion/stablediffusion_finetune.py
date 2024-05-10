@@ -47,21 +47,17 @@ train_data=split['train']
 # Preprocess dataset with text captions
 tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
 
-def preprocess_train(example):
-    image = transform_train(example["image"].convert("RGB"))
-    caption = example["caption"]
-    return {"pixel_values": image, "text": caption}
-def preprocess_test(example):
-    image = transform_test(example["image"])
+def preprocess(example, transform):
+    image = transform(example["image"].convert("RGB"))
     caption = tokenizer(example["caption"], max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
     return {"pixel_values": image, "text": caption}
 
 # Apply preprocessing to each dataset
-train_data = train_data.map(preprocess_train, remove_columns=["image", "caption"])
+train_data = train_data.map(lambda x: preprocess(x, transform_train), remove_columns=["image", "caption"])
 train_data.set_format(type="torch", columns=["pixel_values", "text"], output_all_columns=True)
 # val_data = val_data.map(preprocess_test, remove_columns=["image", "caption"])
 # val_data.set_format(type="torch", columns=["pixel_values", "text"])
-test_data = test_data.map(preprocess_test, remove_columns=["image", "caption"])
+test_data = test_data.map(lambda x: preprocess(x, transform_test), remove_columns=["image", "caption"])
 test_data.set_format(type="torch", columns=["pixel_values", "text"])
 
 # Set up DataLoaders
