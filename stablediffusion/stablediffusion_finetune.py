@@ -206,7 +206,7 @@ def validate_with_prompts(pipeline, validation_prompts, num_inference_steps=20, 
 
 # Train and evaluate
 train(train_dataloader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs)
-evaluate_model(test_dataloader, pipe, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps=20)
+# evaluate_model(test_dataloader, pipe, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps=20)
 
 # Example validation prompts
 validation_prompts = [
