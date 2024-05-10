@@ -49,7 +49,7 @@ train_data=split['train']
 tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
 
 def preprocess(examples, transform):
-    image = transform([example.convert("RGB") for example in examples["image"]])
+    image = [transform(example.convert("RGB")) for example in examples["image"]]
     caption = tokenizer([example[0] for example in examples["caption"]], max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
     return {"pixel_values": image, "caption_ids": caption['input_ids'], "caption_attention_mask": caption['attention_mask']}
 
