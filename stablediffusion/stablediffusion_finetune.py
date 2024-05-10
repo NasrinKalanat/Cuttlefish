@@ -78,7 +78,8 @@ vae = pipe.vae
 text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
 unet = pipe.unet
 
-scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+# scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+scheduler = pipe.scheduler
 
 # Optimizer
 optimizer = AdamW(unet.parameters(), lr=1e-4)
@@ -161,7 +162,7 @@ def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, d
             noise = torch.randn_like(latents)
 
             # Run the denoising loop backward
-            for t in reversed(range(scheduler.config.num_train_timesteps)):
+            for t in reversed(range(scheduler.config.num_train_timesteps//100)):
                 timestep = torch.tensor([t], device=device).long()
                 model_output = unet(noise, timestep, encoder_hidden_states=text_embeddings).sample
                 noise = scheduler.step(model_output, timestep, noise).prev_sample
