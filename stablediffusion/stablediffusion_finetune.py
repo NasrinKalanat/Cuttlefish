@@ -117,7 +117,7 @@ def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, optimizer,
             timesteps = torch.randint(0, scheduler.config.num_train_timesteps, (latents.shape[0],), device=device).long()
 
             noisy_latents = scheduler.add_noise(latents, noise, timesteps)
-            text_embeddings = get_text_embeddings(batch['input_ids'].to(device), text_encoder)
+            text_embeddings = get_text_embeddings(batch['text']['input_ids'].to(device), text_encoder)
 
             # Get model output
             model_output = unet(noisy_latents, timesteps, encoder_hidden_states=text_embeddings).sample
@@ -155,7 +155,7 @@ def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, d
             latents = latents * vae.config.scaling_factor
 
             # Generate captions to text embeddings
-            text_embeddings = get_text_embeddings(batch['input_ids'].to(device), text_encoder)
+            text_embeddings = get_text_embeddings(batch['text']['input_ids'].to(device), text_encoder)
 
             # Set initial noise
             noise = torch.randn_like(latents)
