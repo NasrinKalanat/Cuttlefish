@@ -43,16 +43,16 @@ transform_test = transforms.Compose([
     transforms.Normalize([0.5], [0.5])
     ])
 
-Load the dataset
+#Load the dataset
 dataset = load_dataset("nlphuji/flickr30k")
 split = dataset['test'].train_test_split(test_size=0.2, seed=42)
 test_data=split['test']
 split = split['train'].train_test_split(test_size=0.2, seed=42)
 # val_data=split['test']
 train_data=split['train']
-print(train_data)
-print(test_data)
-print(val_data)
+# print(train_data)
+# print(test_data)
+# print(val_data)
 
 # Preprocess dataset with text captions
 def preprocess_train(examples):
