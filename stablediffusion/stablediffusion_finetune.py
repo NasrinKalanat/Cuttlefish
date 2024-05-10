@@ -235,6 +235,8 @@ import datasets
 import numpy as np
 import torch
 import torch.nn.functional as F
+from datasets import load_dataset
+import torchvision.transforms as transforms
 # import torch.utils.checkpoint
 # import transformers
 from accelerate import Accelerator
@@ -286,6 +288,20 @@ dataloader_num_workers=4
 max_train_samples=10
 max_grad_norm=1.0
 
+
+# Disable Tensor Cores
+torch.backends.cudnn.allow_tf32 = False
+torch.backends.cuda.matmul.allow_tf32 = False
+
+
+dataset = load_dataset("nlphuji/flickr30k")
+split = dataset['test'].train_test_split(test_size=0.2, seed=42)
+test_data=split['test']
+split = split['train'].train_test_split(test_size=0.2, seed=42)
+# val_data=split['test']
+train_data=split['train']
+dataset=split
+
 # Preprocessing the datasets.
 # We need to tokenize input captions and transform the images.
 def tokenize_captions(examples, is_train=True):
@@ -330,7 +346,7 @@ accelerator = Accelerator(
     log_with=report_to,
     project_config=accelerator_project_config,
 )
-dataset=split
+
 with accelerator.main_process_first():
     if max_train_samples is not None:
         dataset["train"] = dataset["train"].shuffle(seed=seed).select(range(max_train_samples))
