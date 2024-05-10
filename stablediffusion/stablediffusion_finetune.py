@@ -152,7 +152,7 @@ def calculate_ssim(img1, img2):
 
 def resize_generated_image(image, size):
     """Resize generated images to match the size of the real image."""
-    return np.array(image.resize(size, Image.Resampling.LANCZOS))
+    return np.array(image.resize((size[0], size[1]), Image.Resampling.LANCZOS))
 def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps):
     """Evaluate the Stable Diffusion model on a given dataset."""
     unet.eval()
