@@ -14,7 +14,7 @@ import os
 import random
 from PIL import Image
 
-weight_dtype=torch.float32
+weight_dtype=torch.float16
 # Load Stable Diffusion pipeline
 pipe = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", dtype=weight_dtype)
 # pipe =pip.to('cuda')
