@@ -100,7 +100,7 @@ unet.to(device, dtype=weight_dtype)
 # Function to compute text embeddings
 def get_text_embeddings(inputs, text_encoder):
     # inputs = {key: value.to(device) for key, value in inputs.items()}
-    return text_encoder(inputs["caption_ids"].to(device), inputs["caption_attention_mask"].to(device), return_dict=False).last_hidden_state
+    return text_encoder(inputs["caption_ids"].to(device), inputs["caption_attention_mask"].to(device)).last_hidden_state
 
 def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs):
     for epoch in range(num_epochs):
