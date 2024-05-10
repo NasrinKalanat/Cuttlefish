@@ -54,11 +54,11 @@ def preprocess(example, transform):
     return {"pixel_values": image, "text": caption}
 
 # Apply preprocessing to each dataset
-train_data = train_data.set_transform(lambda x: preprocess(x, transform_train), output_all_columns=True)
+train_data.set_transform(lambda x: preprocess(x, transform_train), output_all_columns=True)
 # train_data.set_format(type="torch", columns=["pixel_values"], output_all_columns=True)
 # val_data = val_data.map(preprocess_test, remove_columns=["image", "caption"])
 # # val_data.set_format(type="torch", columns=["pixel_values"])
-test_data = test_data.set_transform(lambda x: preprocess(x, transform_test), output_all_columns=True)
+test_data.set_transform(lambda x: preprocess(x, transform_test), output_all_columns=True)
 # test_data.set_format(type="torch", columns=["pixel_values"])
 
 # Set up DataLoaders
