@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-# from datasets import load_dataset
+from datasets import load_dataset
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from diffusers import StableDiffusionPipeline, PNDMScheduler #UNet2DConditionModel, AutoencoderKL,
