@@ -195,7 +195,7 @@ def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, sc
                 generated = np.array(generated)
                 real_size = (real.shape[1], real.shape[0])
                 generated = resize_generated_image(generated, real_size)
-                ssim_score = ssim(real, generated, win_size=3, multichannel=True)
+                ssim_score = ssim(real, generated, win_size=3, data_range=1.0, multichannel=True)
                 ssim_scores.append(ssim_score)
 
     avg_ssim = np.mean(ssim_scores)
