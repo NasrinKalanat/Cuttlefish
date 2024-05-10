@@ -9,19 +9,28 @@ from torch.optim import AdamW
 from torch.nn.functional import mse_loss
 from tqdm import tqdm
 from skimage.metrics import structural_similarity as ssim
+from torch.amp import autocast
+import os
 
-transform_train = transforms.Compose([
-    transforms.RandomCrop(68, padding=4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    #normalize
-    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ])
+resolution=68
+random_flip=True
+center_crop=False
+
+transform_train = transforms.Compose(
+    [
+        transforms.Resize(resolution, interpolation=transforms.InterpolationMode.BILINEAR),
+        transforms.CenterCrop(resolution) if center_crop else transforms.RandomCrop(resolution),
+        transforms.RandomHorizontalFlip() if random_flip else transforms.Lambda(lambda x: x),
+        transforms.ToTensor(),
+        transforms.Normalize([0.5], [0.5]),
+    ]
+)
 # data prep for test set
 transform_test = transforms.Compose([
+    transforms.Resize(resolution, interpolation=transforms.InterpolationMode.BILINEAR),
     transforms.ToTensor(),
     #normalize
-    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    transforms.Normalize([0.5], [0.5])
     ])
 
 # Load the dataset
@@ -34,14 +43,17 @@ train_data=split['train']
 # print(train_data)
 # print(test_data)
 # print(val_data)
+
 # Preprocess dataset with text captions
+tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+
 def preprocess_train(example):
-    image = transform_train(example["image"])
+    image = transform_train(example["image"].convert("RGB"))
     caption = example["caption"]
     return {"pixel_values": image, "text": caption}
 def preprocess_test(example):
     image = transform_test(example["image"])
-    caption = example["caption"]
+    caption = tokenizer(example["caption"], max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
     return {"pixel_values": image, "text": caption}
 
 # Apply preprocessing to each dataset
@@ -64,19 +76,18 @@ pipe = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", 
 
 # Extract individual components for training
 vae = pipe.vae
-# text_encoder = pipe.text_encoder
 # tokenizer = pipe.tokenizer
+# text_encoder = pipe.text_encoder
 text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
-tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
 unet = pipe.unet
 
 scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
 
 # Optimizer
-optimizer = AdamW(unet.parameters(), lr=5e-5)
+optimizer = AdamW(unet.parameters(), lr=1e-4)
 
 # Training loop
-num_epochs = 10
+num_epochs = 1#100
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Freeze vae and text_encoder and set unet to trainable
@@ -90,13 +101,9 @@ text_encoder.to(device, dtype=weight_dtype)
 unet.to(device, dtype=weight_dtype)
 
 # Function to compute text embeddings
-# def get_text_embeddings(texts, tokenizer, text_encoder):
-#     inputs = tokenizer(texts, padding="max_length", return_tensors="pt", max_length=77, truncation=True)
-#     return text_encoder(**inputs.to(device)).last_hidden_state
-def get_text_embeddings(texts, tokenizer, text_encoder):
-    inputs = tokenizer(texts, padding="max_length", return_tensors="pt", max_length=77, truncation=True)
-    inputs = {key: value.to(device) for key, value in inputs.items()}
-    return text_encoder(**inputs).last_hidden_state
+def get_text_embeddings(inputs, text_encoder):
+    # inputs = {key: value.to(device) for key, value in inputs.items()}
+    return text_encoder(**inputs.to(device)).last_hidden_state
 
 def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs):
     for epoch in range(num_epochs):
@@ -113,7 +120,7 @@ def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, optimizer,
             timesteps = torch.randint(0, scheduler.config.num_train_timesteps, (latents.shape[0],), device=device).long()
 
             noisy_latents = scheduler.add_noise(latents, noise, timesteps)
-            text_embeddings = get_text_embeddings(batch["text"][0], tokenizer, text_encoder)
+            text_embeddings = get_text_embeddings(batch["text"][0], text_encoder)
 
             # Get model output
             model_output = unet(noisy_latents, timesteps, encoder_hidden_states=text_embeddings).sample
@@ -151,7 +158,7 @@ def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, d
             latents = latents * vae.config.scaling_factor
 
             # Generate captions to text embeddings
-            text_embeddings = get_text_embeddings(batch["text"][0], tokenizer, text_encoder)
+            text_embeddings = get_text_embeddings(batch["text"][0], text_encoder)
 
             # Set initial noise
             noise = torch.randn_like(latents)
@@ -173,6 +180,26 @@ def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, d
     avg_ssim = np.mean(ssim_scores)
     print(f"Average SSIM: {avg_ssim}")
 
+def validate_with_prompts(pipeline, validation_prompts, num_inference_steps=20, output_dir="out"):
+    """Generate and display images for a list of validation prompts."""
+    pipeline.to("cuda")
+    images = []
+    for prompt in validation_prompts:
+        with autocast("cuda"):
+            image = pipeline(prompt, num_inference_steps=num_inference_steps).images[0]
+            image.save(os.path.join(output_dir, f"validation_output_{validation_prompts}.png"))
+        images.append(image)
+    return images
+
 # Train and evaluate
 train(train_dataloader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs)
 evaluate_model(test_dataloader, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype)
+
+# Example validation prompts
+validation_prompts = [
+    "A beautiful landscape with mountains",
+    "A futuristic cityscape at night",
+    "An underwater coral reef scene",
+    "A close-up of a robotic hand"
+]
+validation_images = validate_with_prompts(pipe, validation_prompts, num_inference_steps=20)
