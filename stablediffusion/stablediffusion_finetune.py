@@ -330,7 +330,7 @@ accelerator = Accelerator(
     log_with=report_to,
     project_config=accelerator_project_config,
 )
-
+dataset=split
 with accelerator.main_process_first():
     if max_train_samples is not None:
         dataset["train"] = dataset["train"].shuffle(seed=seed).select(range(max_train_samples))
