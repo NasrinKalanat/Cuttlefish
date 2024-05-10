@@ -150,9 +150,11 @@ def calculate_ssim(img1, img2):
     img2 = img2.permute(1, 2, 0).numpy()
     return ssim(img1, img2, multichannel=True)
 
+
 def resize_generated_image(image, size):
     """Resize generated images to match the size of the real image."""
-    return np.array(image.resize((size[0], size[1]), Image.Resampling.LANCZOS))
+    pil_image = Image.fromarray(image)  # Convert back to PIL Image
+    return np.array(pil_image.resize((size[0], size[1]), Image.Resampling.LANCZOS))
 def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps):
     """Evaluate the Stable Diffusion model on a given dataset."""
     unet.eval()
