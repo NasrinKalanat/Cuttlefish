@@ -322,6 +322,15 @@ def preprocess_train(examples):
     examples["input_ids"] = tokenize_captions(examples)
     return examples
 
+accelerator_project_config = ProjectConfiguration(project_dir=output_dir, logging_dir=logging_dir)
+
+accelerator = Accelerator(
+    gradient_accumulation_steps=gradient_accumulation_steps,
+    mixed_precision=mixed_precision,
+    log_with=report_to,
+    project_config=accelerator_project_config,
+)
+
 with accelerator.main_process_first():
     if max_train_samples is not None:
         dataset["train"] = dataset["train"].shuffle(seed=seed).select(range(max_train_samples))
@@ -344,15 +353,6 @@ train_dataloader = torch.utils.data.DataLoader(
 )
 
 optimizer_cls = torch.optim.AdamW
-
-accelerator_project_config = ProjectConfiguration(project_dir=output_dir, logging_dir=logging_dir)
-
-accelerator = Accelerator(
-    gradient_accumulation_steps=gradient_accumulation_steps,
-    mixed_precision=mixed_precision,
-    log_with=report_to,
-    project_config=accelerator_project_config,
-)
 
 if seed is not None:
     set_seed(seed)
