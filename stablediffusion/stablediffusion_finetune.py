@@ -157,7 +157,7 @@ def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, sc
     with torch.no_grad():
         for batch in tqdm(data_loader, desc="Evaluating"):
             with autocast("cuda"):
-                generated_images = pipeline(batch["caption_ids"].to(device), num_inference_steps=num_inference_steps, generator=generator).images[0]
+                generated_images = pipeline(batch["prompt"].to(device), num_inference_steps=num_inference_steps, generator=generator).images[0]
             # # Encode the images to latents
             # latents = vae.encode(batch["pixel_values"].to(weight_dtype).to(device)).latent_dist.sample()
             # latents = latents * vae.config.scaling_factor
