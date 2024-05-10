@@ -30,7 +30,7 @@ transform_train = transforms.Compose(
 # data prep for test set
 transform_test = transforms.Compose([
     transforms.Resize(resolution, interpolation=transforms.InterpolationMode.BILINEAR),
-    # transforms.ToTensor(),
+    transforms.ToTensor(),
     #normalize
     # transforms.Normalize([0.5], [0.5])
     ])
