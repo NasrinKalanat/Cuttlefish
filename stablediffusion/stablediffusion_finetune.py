@@ -1,18 +1,18 @@
-# import numpy as np
-# import torch
-# from datasets import load_dataset
-# import torchvision.transforms as transforms
-# from torch.utils.data import DataLoader
-# from diffusers import StableDiffusionPipeline, PNDMScheduler #UNet2DConditionModel, AutoencoderKL,
-# from transformers import CLIPTextModel, CLIPTokenizer
-# from torch.optim import AdamW
-# from torch.nn.functional import mse_loss
-# from tqdm import tqdm
-# from skimage.metrics import structural_similarity as ssim
-# from torch.amp import autocast
-# import os
-# import random
-# from PIL import Image
+import numpy as np
+import torch
+from datasets import load_dataset
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+from diffusers import StableDiffusionPipeline, PNDMScheduler #UNet2DConditionModel, AutoencoderKL,
+from transformers import CLIPTextModel, CLIPTokenizer
+from torch.optim import AdamW
+from torch.nn.functional import mse_loss
+from tqdm import tqdm
+from skimage.metrics import structural_similarity as ssim
+from torch.amp import autocast
+import os
+import random
+from PIL import Image
 #
 # weight_dtype=torch.float32
 # # Load Stable Diffusion pipeline
