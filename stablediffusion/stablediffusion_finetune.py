@@ -156,8 +156,12 @@ def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, sc
     generator = torch.Generator(device=device).manual_seed(42)
     with torch.no_grad():
         for batch in tqdm(data_loader, desc="Evaluating"):
-            with autocast("cuda"):
-                generated_images = pipeline(batch["prompt"], num_inference_steps=num_inference_steps, generator=generator).images[0]
+            generated_images = []
+            with autocast(dtype=weight_dtype):
+                # Generate images one prompt at a time
+                for prompt in batch["prompt"]:
+                    image = pipe(prompt, num_inference_steps=num_inference_steps, generator=generator).images[0]
+                    generated_images.append(image)
             # # Encode the images to latents
             # latents = vae.encode(batch["pixel_values"].to(weight_dtype).to(device)).latent_dist.sample()
             # latents = latents * vae.config.scaling_factor
@@ -176,10 +180,13 @@ def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, sc
             #
             # # Decode the latents back to images
             # generated_images = vae.decode(noise / vae.config.scaling_factor).sample
+            torch.cuda.empty_cache()
 
             # Calculate SSIM scores between original and generated images
             for real, generated in zip(batch["pixel_values"], generated_images):
-                ssim_score = calculate_ssim(real, generated)
+                real = (real * 0.5 + 0.5).cpu().numpy().transpose(1, 2, 0) * 255  # Denormalize and convert to uint8
+                generated = np.array(generated)
+                ssim_score = ssim(real, generated, multichannel=True)
                 ssim_scores.append(ssim_score)
 
     avg_ssim = np.mean(ssim_scores)
