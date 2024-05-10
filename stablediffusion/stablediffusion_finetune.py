@@ -152,7 +152,7 @@ def calculate_ssim(img1, img2):
 
 def resize_generated_image(image, size):
     """Resize generated images to match the size of the real image."""
-    return np.array(Image.fromarray(image).resize(size, Image.ANTIALIAS))
+    return np.array(image.resize(size, Image.ANTIALIAS))
 def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps):
     """Evaluate the Stable Diffusion model on a given dataset."""
     unet.eval()
@@ -190,7 +190,7 @@ def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, sc
             # Calculate SSIM scores between original and generated images
             for real, generated in zip(batch["pixel_values"], generated_images):
                 real = (real * 0.5 + 0.5).cpu().numpy().transpose(1, 2, 0) * 255  # Denormalize and convert to uint8
-                # generated = np.array(generated)
+                generated = np.array(generated)
                 real_size = (real.shape[1], real.shape[0])
                 generated = resize_generated_image(generated, real_size)
                 ssim_score = ssim(real, generated, multichannel=True)
