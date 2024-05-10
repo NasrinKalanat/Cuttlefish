@@ -55,11 +55,11 @@ def preprocess(example, transform):
 
 # Apply preprocessing to each dataset
 train_data = train_data.map(lambda x: preprocess(x, transform_train), remove_columns=["image", "caption"])
-train_data.set_format(type="torch", columns=["pixel_values", "text"], output_all_columns=True)
+train_data.set_format(type="torch", columns=["pixel_values"], output_all_columns=True)
 # val_data = val_data.map(preprocess_test, remove_columns=["image", "caption"])
-# val_data.set_format(type="torch", columns=["pixel_values", "text"])
+# val_data.set_format(type="torch", columns=["pixel_values"])
 test_data = test_data.map(lambda x: preprocess(x, transform_test), remove_columns=["image", "caption"])
-test_data.set_format(type="torch", columns=["pixel_values", "text"])
+test_data.set_format(type="torch", columns=["pixel_values"])
 
 # Set up DataLoaders
 train_dataloader = DataLoader(train_data, batch_size=8, shuffle=True)
@@ -117,7 +117,7 @@ def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, optimizer,
             timesteps = torch.randint(0, scheduler.config.num_train_timesteps, (latents.shape[0],), device=device).long()
 
             noisy_latents = scheduler.add_noise(latents, noise, timesteps)
-            text_embeddings = get_text_embeddings(batch["text"].to(device), text_encoder)
+            text_embeddings = get_text_embeddings(batch['input_ids'].to(device), text_encoder)
 
             # Get model output
             model_output = unet(noisy_latents, timesteps, encoder_hidden_states=text_embeddings).sample
@@ -155,7 +155,7 @@ def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, d
             latents = latents * vae.config.scaling_factor
 
             # Generate captions to text embeddings
-            text_embeddings = get_text_embeddings(batch["text"], text_encoder)
+            text_embeddings = get_text_embeddings(batch['input_ids'].to(device), text_encoder)
 
             # Set initial noise
             noise = torch.randn_like(latents)
