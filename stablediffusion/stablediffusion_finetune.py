@@ -32,7 +32,7 @@ transform_test = transforms.Compose([
     transforms.Resize(resolution, interpolation=transforms.InterpolationMode.BILINEAR),
     transforms.ToTensor(),
     #normalize
-    # transforms.Normalize([0.5], [0.5])
+    transforms.Normalize([0.5], [0.5])
     ])
 
 # Load the dataset
@@ -91,7 +91,7 @@ scheduler = pipe.scheduler
 optimizer = AdamW(unet.parameters(), lr=1e-4)
 
 # Training loop
-num_epochs = 0#100
+num_epochs = 100
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Freeze vae and text_encoder and set unet to trainable
@@ -191,13 +191,14 @@ def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, sc
 
             # Calculate SSIM scores between original and generated images
             for real, generated in zip(batch["pixel_values"], generated_images):
-                # real = (real * 0.5 + 0.5).cpu().numpy().transpose(1, 2, 0) * 255  # Denormalize and convert to uint8
+                real = (real * 0.5 + 0.5).cpu().numpy().transpose(1, 2, 0) * 255  # Denormalize and convert to uint8
                 generated = np.array(generated)
                 real_size = (real.shape[1], real.shape[0])
                 generated = resize_generated_image(generated, real_size)
                 ssim_score = ssim(real, generated, win_size=3, data_range=1.0, multichannel=True)
                 ssim_scores.append(ssim_score)
             print(ssim_score)
+            break
 
     avg_ssim = np.mean(ssim_scores)
     print(f"Average SSIM: {avg_ssim}")
