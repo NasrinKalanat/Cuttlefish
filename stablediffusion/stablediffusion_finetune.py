@@ -78,8 +78,8 @@ text_encoder = pipe.text_encoder
 # text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
 unet = pipe.unet
 
-scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
-# scheduler = pipe.scheduler
+# scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+scheduler = pipe.scheduler
 
 # Optimizer
 optimizer = AdamW(unet.parameters(), lr=1e-4)
@@ -144,31 +144,33 @@ def calculate_ssim(img1, img2):
     img2 = img2.permute(1, 2, 0).numpy()
     return ssim(img1, img2, multichannel=True)
 
-def evaluate_model(data_loader, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps):
+def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps):
     """Evaluate the Stable Diffusion model on a given dataset."""
     unet.eval()
     ssim_scores = []
 
     with torch.no_grad():
         for batch in tqdm(data_loader, desc="Evaluating"):
-            # Encode the images to latents
-            latents = vae.encode(batch["pixel_values"].to(weight_dtype).to(device)).latent_dist.sample()
-            latents = latents * vae.config.scaling_factor
-
-            # Generate captions to text embeddings
-            text_embeddings = get_text_embeddings(batch, text_encoder)
-
-            # Set initial noise
-            noise = torch.randn_like(latents)
-
-            # Run the denoising loop backward
-            for t in reversed(range(num_inference_steps)):
-                timestep = torch.tensor([t], device=device).long()
-                model_output = unet(noise, timestep, encoder_hidden_states=text_embeddings).sample
-                noise = scheduler.step(model_output, timestep, noise).prev_sample
-
-            # Decode the latents back to images
-            generated_images = vae.decode(noise / vae.config.scaling_factor).sample
+            with autocast("cuda"):
+                generated_images = pipeline(batch["caption_ids"].to(device), num_inference_steps=num_inference_steps, generator=generator).images[0]
+            # # Encode the images to latents
+            # latents = vae.encode(batch["pixel_values"].to(weight_dtype).to(device)).latent_dist.sample()
+            # latents = latents * vae.config.scaling_factor
+            #
+            # # Generate captions to text embeddings
+            # text_embeddings = get_text_embeddings(batch, text_encoder)
+            #
+            # # Set initial noise
+            # noise = torch.randn_like(latents)
+            #
+            # # Run the denoising loop backward
+            # for t in reversed(range(num_inference_steps)):
+            #     timestep = torch.tensor([t], device=device).long()
+            #     model_output = unet(noise, timestep, encoder_hidden_states=text_embeddings).sample
+            #     noise = scheduler.step(model_output, timestep, noise).prev_sample
+            #
+            # # Decode the latents back to images
+            # generated_images = vae.decode(noise / vae.config.scaling_factor).sample
 
             # Calculate SSIM scores between original and generated images
             for real, generated in zip(batch["pixel_values"], generated_images):
@@ -182,16 +184,17 @@ def validate_with_prompts(pipeline, validation_prompts, num_inference_steps=20, 
     """Generate and display images for a list of validation prompts."""
     pipeline.to("cuda")
     images = []
+    generator = torch.Generator(device=device).manual_seed(42)
     for prompt in validation_prompts:
         with autocast("cuda"):
-            image = pipeline(prompt, num_inference_steps=num_inference_steps).images[0]
+            image = pipeline(prompt, num_inference_steps=num_inference_steps, generator=generator).images[0]
             image.save(os.path.join(output_dir, f"validation_output_{validation_prompts}.png"))
         images.append(image)
     return images
 
 # Train and evaluate
 train(train_dataloader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs)
-evaluate_model(test_dataloader, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps=20)
+evaluate_model(test_dataloader, pipe, vae, unet, tokenizer, text_encoder, scheduler, device, weight_dtype, num_inference_steps=20)
 
 # Example validation prompts
 validation_prompts = [
