@@ -13,7 +13,7 @@ from torch.amp import autocast
 import os
 import random
 
-resolution=68
+resolution=(68,68)
 random_flip=True
 center_crop=False
 
