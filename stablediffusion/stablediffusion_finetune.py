@@ -98,7 +98,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Freeze vae and text_encoder and set unet to trainable
 vae.requires_grad_(False)
 text_encoder.requires_grad_(False)
-unet.train()
 
 # Move components to the appropriate device
 vae.to(device, dtype=weight_dtype)
@@ -112,6 +111,7 @@ def get_text_embeddings(inputs, text_encoder):
 
 def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs):
     for epoch in range(num_epochs):
+        unet.requires_grad_(True)
         unet.train()
         train_loss = 0
         progress_bar = tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{num_epochs}")
