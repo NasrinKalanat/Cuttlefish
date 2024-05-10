@@ -14,7 +14,7 @@ import os
 import random
 from PIL import Image
 
-resolution=(68,68)
+resolution=(256,256)
 random_flip=True
 center_crop=False
 
