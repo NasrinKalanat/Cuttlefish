@@ -58,8 +58,8 @@ train_data=split['train']
 def preprocess_train(examples):
     image = [transform_train(example.convert("RGB")) for example in examples["image"]]
     caption = tokenizer([example[0] for example in examples["caption"]], max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
-    return {"pixel_values": image, "caption_ids": caption['input_ids'], "caption_attention_mask": caption['attention_mask']}
-
+    # return {"pixel_values": image, "text": caption['input_ids'], "caption_attention_mask": caption['attention_mask']}
+    return {"pixel_values": image, "prompt": caption}
 def preprocess_test(examples):
     image = [transform_test(example.convert("RGB")) for example in examples["image"]]
     caption = [example[0] for example in examples["caption"]]
@@ -106,8 +106,9 @@ unet.to(device, dtype=weight_dtype)
 
 # Function to compute text embeddings
 def get_text_embeddings(inputs, text_encoder):
-    # inputs = {key: value.to(device) for key, value in inputs.items()}
-    return text_encoder(inputs["caption_ids"].to(device), inputs["caption_attention_mask"].to(device)).last_hidden_state
+    # # inputs = {key: value.to(device) for key, value in inputs.items()}
+    # return text_encoder(inputs["caption_ids"].to(device), inputs["caption_attention_mask"].to(device)).last_hidden_state
+    return text_encoder(**inputs.to(device)).last_hidden_state
 
 def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, optimizer, device, weight_dtype, num_epochs):
     for epoch in range(num_epochs):
@@ -125,7 +126,7 @@ def train(data_loader, vae, unet, tokenizer, text_encoder, scheduler, optimizer,
             timesteps = torch.randint(0, scheduler.config.num_train_timesteps, (latents.shape[0],), device=device).long()
 
             noisy_latents = scheduler.add_noise(latents, noise, timesteps)
-            text_embeddings = get_text_embeddings(batch, text_encoder)
+            text_embeddings = get_text_embeddings(batch["prompt"], text_encoder)
 
             # Get model output
             model_output = unet(noisy_latents, timesteps, encoder_hidden_states=text_embeddings).sample
