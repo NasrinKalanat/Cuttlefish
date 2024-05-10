@@ -48,18 +48,18 @@ train_data=split['train']
 # Preprocess dataset with text captions
 tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
 
-def preprocess(example, transform):
-    image = transform(example["image"].convert("RGB"))
-    caption = tokenizer(example["caption"][random.randint(0,len(example["caption"])-1)], max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
+def preprocess(examples, transform):
+    image = transform([example["image"].convert("RGB") for example in examples])
+    caption = tokenizer([example["caption"][random.randint(0,len(example["caption"])-1)] for example in examples], max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt")
     return {"pixel_values": image, "caption_ids": caption['input_ids'], "caption_attention_mask": caption['attention_mask']}
 
 # Apply preprocessing to each dataset
-train_data = train_data.map(lambda x: preprocess(x, transform_train), remove_columns=["image", "caption"])
-train_data.set_format(type="torch", columns=["pixel_values", "caption_ids", "caption_attention_mask"], output_all_columns=True)
-# val_data = val_data.map(preprocess_test, remove_columns=["image", "caption"])
+train_data.set_transform(lambda x: preprocess(x, transform_train), output_all_columns=True)
+# train_data.set_format(type="torch", columns=["pixel_values", "caption_ids", "caption_attention_mask"], output_all_columns=True)
+# val_data.set_transform(preprocess_test, output_all_columns=True)
 # val_data.set_format(type="torch", columns=["pixel_values"])
-test_data = test_data.map(lambda x: preprocess(x, transform_test), remove_columns=["image", "caption"])
-test_data.set_format(type="torch", columns=["pixel_values", "caption_ids", "caption_attention_mask"])
+test_data.set_transform(lambda x: preprocess(x, transform_test), output_all_columns=True)
+# test_data.set_format(type="torch", columns=["pixel_values", "caption_ids", "caption_attention_mask"])
 
 # Set up DataLoaders
 train_dataloader = DataLoader(train_data, batch_size=8, shuffle=True)
