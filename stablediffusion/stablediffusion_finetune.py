@@ -192,7 +192,7 @@ def evaluate_model(data_loader, pipeline, vae, unet, tokenizer, text_encoder, sc
     avg_ssim = np.mean(ssim_scores)
     print(f"Average SSIM: {avg_ssim}")
 
-def validate_with_prompts(pipeline, validation_prompts, num_inference_steps=20, output_dir="out"):
+def validate_with_prompts(pipeline, validation_prompts, num_inference_steps=20, output_dir=""):
     """Generate and display images for a list of validation prompts."""
     pipeline.to("cuda")
     images = []
