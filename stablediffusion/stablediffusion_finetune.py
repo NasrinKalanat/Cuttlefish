@@ -198,7 +198,7 @@ def validate_with_prompts(pipeline, validation_prompts, num_inference_steps=20, 
     images = []
     generator = torch.Generator(device=device).manual_seed(42)
     for prompt in validation_prompts:
-        with autocast("cuda"):
+        with autocast(device_type="cuda", dtype=weight_dtype):
             image = pipeline(prompt, num_inference_steps=num_inference_steps, generator=generator).images[0]
             image.save(os.path.join(output_dir, f"validation_output_{validation_prompts}.png"))
         images.append(image)
